@@ -1,7 +1,6 @@
 import os
 import requests
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
 
 URL = "https://ipinfo.io/{}/json"
 ENV_FILE = os.path.join(os.path.dirname(__file__), '..', '.env')
@@ -44,10 +43,9 @@ def get_location(ip):
     }
 
 
-def get_locations(ips, threads=16):
+def get_locations(ips):
     read_env()
-    with ThreadPoolExecutor(threads) as pool:
-        return list(pool.map(get_location, ips))
+    return [get_location(ip) for ip in ips]
 
 
 if __name__ == "__main__":
