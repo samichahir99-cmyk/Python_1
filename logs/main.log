@@ -1,0 +1,39 @@
+2026-11-09 14:15:26,117 | INFO    | main | start
+2026-11-09 14:26:07,149 | INFO    | main | start
+2026-11-09 14:26:07,260 | ERROR   | main | unexpected error : module 'process.geolocation' has no attribute 'get_locations'
+Traceback (most recent call last):
+  File "c:\Users\HP\Desktop\Architect_project\main.py", line 62, in <module>
+    run()
+    ~~~^^
+  File "c:\Users\HP\Desktop\Architect_project\main.py", line 49, in run
+    locations = geolocation.get_locations(geolocation.ips_to_locate(events), storage.load_locations())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'process.geolocation' has no attribute 'get_locations'
+2026-11-09 14:26:22,112 | INFO    | main | start
+2026-11-09 14:26:22,189 | ERROR   | main | unexpected error : module 'process.geolocation' has no attribute 'get_locations'
+Traceback (most recent call last):
+  File "C:\Users\HP\Desktop\Architect_project\main.py", line 62, in <module>
+    run()
+    ~~~^^
+  File "C:\Users\HP\Desktop\Architect_project\main.py", line 49, in run
+    locations = geolocation.get_locations(geolocation.ips_to_locate(events), storage.load_locations())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'process.geolocation' has no attribute 'get_locations'
+2026-11-09 14:28:53,524 | INFO    | main | start
+2026-11-09 14:28:54,135 | ERROR   | main | unexpected error : module 'process.geolocation' has no attribute 'get_locations'
+Traceback (most recent call last):
+  File "C:\Users\HP\Desktop\Architect_project\main.py", line 62, in <module>
+    run()
+    ~~~^^
+  File "C:\Users\HP\Desktop\Architect_project\main.py", line 49, in run
+    locations = geolocation.get_locations(geolocation.ips_to_locate(events), storage.load_locations())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'process.geolocation' has no attribute 'get_locations'
+2026-11-09 14:30:19,640 | INFO    | main | start
+2026-11-09 14:30:54,363 | INFO    | main | end
+2026-11-09 14:43:41,072 | INFO    | main | start
+2026-11-09 14:43:45,165 | INFO    | main | end
+2026-11-09 14:44:04,109 | INFO    | main | start
+2026-11-09 14:44:11,545 | INFO    | main | end
+2026-11-09 15:02:08,085 | INFO    | main | start
+2026-11-09 15:02:13,925 | INFO    | main | end

@@ -1,5 +1,8 @@
+import logging
 import re
 from datetime import datetime
+
+log = logging.getLogger('process')
 
 YEAR = 2026  # syslog lines don't carry the year
 
@@ -37,7 +40,11 @@ def extract_from_row(row):
 
 
 def extract(rows):
-    return [event for event in map(extract_from_row, rows) if event]
+    events = [event for event in map(extract_from_row, rows) if event]
+    if rows and not events:
+        log.warning('no ssh login attempt found, are these really auth.log files ?')
+    log.info(f'{len(rows)} lines -> {len(events)} ssh events')
+    return events
 
 
 if __name__ == '__main__':

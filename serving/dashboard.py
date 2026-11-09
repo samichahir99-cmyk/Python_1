@@ -1,7 +1,8 @@
-import math
+import logging
 
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+
+log = logging.getLogger('serving')
 
 
 def _add(counts, key, n):
@@ -69,6 +70,19 @@ def report(s):
     for a in s['accepted']:
         print(f"  accepted -> {a['happened_at']}  {a['user']}@{a['ip']} [{a['country']}]")
     print('-' * 50)
+    print('failed attempts per country:')
+    for r in s['by_country'][:15]:
+        print(f"  {r['country']:<10}{int(r['n'])}")
+    print('successful attempts per user:')
+    for r in s['accepted_by_user'][:15]:
+        print(f"  {r['user']:<16}{int(r['n'])}")
+    print('top invalid usernames:')
+    for r in s['top_users']['INVALID'][:10]:
+        print(f"  {r['user']:<16}{int(r['n'])}")
+    print('top usernames tried (failed password):')
+    for r in s['top_users']['FAILED'][:10]:
+        print(f"  {r['user']:<16}{int(r['n'])}")
+    print('-' * 50)
     for r in s['top_ips'][:10]:
         line = f"{r['ip']:<16}{int(r['n']):>6}  {r['country'] or '??':<4}{r['org'] or ''}"
         print(line.encode('ascii', 'replace').decode())   # Windows console = cp1252
@@ -83,6 +97,7 @@ def _hbar(ax, labels, values, title, color):
 
 
 def _empty(ax, title):
+    log.warning(f'graph "{title.splitlines()[0]}" is empty')
     ax.set_title(title)
     ax.text(0.5, 0.5, 'no data', ha='center', va='center', transform=ax.transAxes)
     ax.set_axis_off()
@@ -90,37 +105,37 @@ def _empty(ax, title):
 
 def dashboard(s):
     t = s['totals']
-    fig, ax = plt.subplots(1, 3, figsize=(20, 7), layout='constrained')
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6), layout='constrained')
     fig.suptitle(f"SSH log analyser - {t['FAILED']} failed passwords, {t['INVALID']} invalid users, "
                  f"{t['ACCEPTED']} accepted login(s)", fontsize=15, fontweight='bold')
 
     # 1. failed attempts per country
-    countries = s['by_country'][:12]
+    countries = s['by_country'][:15]
     title = f"Failed attempts per country\n({s['located_failed']} of {t['FAILED']} located)"
     if countries:
-        _hbar(ax[0], [r['country'] for r in countries], [int(r['n']) for r in countries], title, 'teal')
-        ax[0].set_xlabel('failed attempts')
+        _hbar(axes[0], [r['country'] for r in countries], [int(r['n']) for r in countries], title, 'teal')
+        axes[0].set_xlabel('failed attempts')
     else:
-        _empty(ax[0], title)
+        _empty(axes[0], title)
 
     # 2. successful attempts per user
-    accepted = s['accepted_by_user'][:12]
+    accepted = s['accepted_by_user'][:15]
     title = 'Successful attempts per user'
     if accepted:
-        _hbar(ax[1], [r['user'] for r in accepted], [int(r['n']) for r in accepted], title, 'limegreen')
-        ax[1].set_xlabel('successful logins')
-        ax[1].xaxis.get_major_locator().set_params(integer=True)
-        ax[1].set_ylim(max(len(accepted), 4) - 0.5, -0.5)   # keep bars thin when there are few users
+        _hbar(axes[1], [r['user'] for r in accepted], [int(r['n']) for r in accepted], title, 'limegreen')
+        axes[1].set_xlabel('successful logins')
+        axes[1].xaxis.get_major_locator().set_params(integer=True)
+        axes[1].set_ylim(max(len(accepted), 4) - 0.5, -0.5)   # keep bars thin when there are few users
     else:
-        _empty(ax[1], title)
+        _empty(axes[1], title)
 
     # 3. failed attempts with an invalid user (account does not exist)
-    invalid = s['top_users']['INVALID'][:12]
+    invalid = s['top_users']['INVALID'][:15]
     title = f"Failed attempts with invalid user\n(total {t['INVALID']})"
     if invalid:
-        _hbar(ax[2], [r['user'] for r in invalid], [int(r['n']) for r in invalid], title, 'gold')
-        ax[2].set_xlabel('attempts')
+        _hbar(axes[2], [r['user'] for r in invalid], [int(r['n']) for r in invalid], title, 'gold')
+        axes[2].set_xlabel('attempts')
     else:
-        _empty(ax[2], title)
+        _empty(axes[2], title)
 
     plt.show()

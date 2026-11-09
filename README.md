@@ -1,66 +1,95 @@
-# SSH auth.log analyser
+# Analyseur de logs d'authentification SSH
 
-Pipeline d'analyse des logs SSH (`auth.log`) : lecture des fichiers de logs, extraction des événements
-d'authentification, géolocalisation des adresses IP, puis affichage d'un rapport dans le terminal et d'un dashboard.
+Ce projet analyse des journaux Linux `auth.log` pour résumer les tentatives de connexion SSH. Il lit les fichiers de
+logs, extrait les événements d'authentification, géolocalise les adresses IP et présente les résultats dans le terminal
+et dans un dashboard.
 
-## Structure
+## Prérequis
 
-```
-main.py                          point d'entrée : exécute le pipeline
-ingestion/raw.py                 lit tous les fichiers de data/ (texte ou gzip)     -> lignes
-process/extract_transform.py     regex sur chaque ligne                              -> événements
-process/geolocation.py           ipinfo.io, une requête par IP                       -> pays / ville / organisation
-serving/dashboard.py             statistiques, rapport terminal et dashboard matplotlib
-data/                            logs à analyser : auth.log.1, auth.log.2, auth.log.3.gz, auth.log.4.gz
-```
+- Python 3.14 ou une version ultérieure
+- [uv](https://docs.astral.sh/uv/)
+- Une connexion Internet pour géolocaliser les nouvelles adresses IP
 
-## Fonctionnement
+## Installation et lancement
 
-1. **Ingestion** : `raw.toRows('./data')` lit les fichiers `auth.log.*` (rotation des logs). Les fichiers
-   compressés sont détectés par leur signature gzip.
-2. **Extraction** : chaque ligne `sshd` est transformée en événement (`happened_at`, `event`, `user`, `ip`, `port`, `count`).
-   Trois types d'événements :
-   - `FAILED` : `Failed password for ...`
-   - `INVALID` : `Invalid user ...` (le compte n'existe pas)
-   - `ACCEPTED` : `Accepted ... for ...` (connexion réussie)
+À la racine du projet, installez les dépendances puis lancez l'analyse :
 
-   Les lignes `message repeated N times` comptent pour N tentatives. L'année (2026) est fixée dans le code,
-   car les logs syslog ne la contiennent pas.
-3. **Géolocalisation** : `ips_to_locate` choisit au maximum `LOCATE_LIMIT` IP (100, défini dans `main.py`) :
-   d'abord celles qui ont réussi à se connecter, puis les plus actives. Chaque IP est interrogée sur ipinfo.io, l'une après l'autre (une centaine de requêtes : quelques secondes à quelques minutes selon la connexion).
-4. **Restitution** : `dashboard.stats` calcule les statistiques, `dashboard.report` affiche le résumé dans le terminal
-   et `dashboard.dashboard` ouvre le dashboard.
-
-## Dashboard
-
-| Graphique | Contenu |
-|---|---|
-| Failed attempts per country | nombre de tentatives échouées par pays |
-| Successful attempts per user | nombre de connexions réussies par utilisateur |
-| Failed attempts with invalid user | tentatives avec un utilisateur inexistant, par nom d'utilisateur |
-
-Limite : le graphique par pays ne couvre que les IP géolocalisées (100 au maximum). Son titre indique combien
-de tentatives échouées ont été localisées sur le total. Sans accès à Internet, aucune IP n'est localisée
-et ce graphique est vide.
-
-## Lancer le projet
-
-Prérequis : Python 3.14 et [uv](https://docs.astral.sh/uv/).
-
-```
+```powershell
 uv sync
 uv run main.py
 ```
 
-- Une connexion Internet est nécessaire pour la géolocalisation.
-- Optionnel : un jeton ipinfo.io dans un fichier `.env` à la racine (`IPINFO_TOKEN=...`) pour lever la limite
-  de requêtes du plan gratuit. Ce fichier n'est pas versionné (`.gitignore`).
-- Le dossier `.venv` n'est pas versionné : il est recréé par `uv sync`.
+Le programme crée les dossiers `storage/` et `logs/` si nécessaire. Au premier lancement, il lit les fichiers du dossier
+`data/`, enregistre les événements dans `storage/events.csv`, puis affiche le rapport et ouvre le dashboard.
+
+Pour relire les journaux et reconstruire les événements :
+
+```powershell
+uv run main.py reload
+```
+
+Sans `reload`, les événements déjà enregistrés dans `storage/events.csv` sont réutilisés ; les fichiers de `data/` ne
+sont donc pas relus à chaque lancement.
+
+## Journaux analysés
+
+Le dossier `data/` doit contenir des fichiers nommés `auth.log.*`, par exemple `auth.log.1` ou `auth.log.2.gz`.
+Les fichiers compressés sont reconnus à partir de leur signature gzip. Les autres fichiers, notamment un fichier nommé
+simplement `auth.log`, ne sont pas lus.
+
+Seules les lignes `sshd` correspondant aux événements suivants sont extraites :
+
+- `FAILED` : échec d'authentification (par exemple, un mot de passe refusé) ;
+- `INVALID` : tentative avec un utilisateur inexistant ;
+- `ACCEPTED` : connexion acceptée.
+
+Les répétitions syslog (`message repeated N times`) sont comptabilisées comme N tentatives. Les événements enregistrés
+contiennent la date, le type d'événement, l'utilisateur, l'adresse IP, le port et le nombre de tentatives. Comme les dates
+syslog ne contiennent pas l'année, celle-ci est fixée à 2026 dans le code.
+
+## Géolocalisation et cache
+
+Le programme sélectionne jusqu'à 100 adresses IP issues des événements `FAILED` et `ACCEPTED`, en donnant la priorité
+aux connexions acceptées, puis aux IP les plus actives. Les nouvelles adresses sont recherchées sur
+[ipinfo.io](https://ipinfo.io/) et les résultats sont conservés dans `storage/locations.csv`. Une IP déjà présente dans
+ce fichier n'est pas interrogée à nouveau, même après une relance avec `reload`.
+
+Un jeton ipinfo.io est facultatif. Pour l'utiliser, créez un fichier `.env` à la racine du projet contenant :
+
+```text
+IPINFO_TOKEN=votre_jeton
+```
+
+Le fichier `.env` est ignoré par Git. Sans accès au service, les adresses non géolocalisées reçoivent un pays inconnu
+(`??`) ; les IP déjà présentes dans le cache restent disponibles.
+
+## Résultats
+
+Le rapport du terminal présente les totaux, les connexions acceptées, les principales IP et les noms d'utilisateur les
+plus souvent testés. Le dashboard Matplotlib affiche trois graphiques :
+
+1. nombre de tentatives échouées par pays ;
+2. nombre de connexions réussies par utilisateur ;
+3. tentatives échouées avec un utilisateur inexistant.
+
+Le graphique par pays ne porte que sur les tentatives échouées provenant d'IP géolocalisées.
+
+Les fichiers CSV sont stockés dans `storage/`. Les journaux d'exécution par module sont enregistrés dans `logs/`.
+
+## Structure du projet
+
+```text
+main.py                       point d'entrée et orchestration
+ingestion/raw.py              lecture des fichiers auth.log.*
+process/extract_transform.py  extraction des événements SSH
+process/geolocation.py        sélection et géolocalisation des IP
+storage/storage.py            persistance CSV des événements et du cache IP
+serving/dashboard.py          rapport terminal et dashboard
+data/                         journaux à analyser
+```
 
 ## Dépendances
 
-- `matplotlib` : dashboard
-- `requests` : appels à ipinfo.io
-- bibliothèque standard : `re`, `gzip`, `os`, `datetime`, `math`, `collections`
-
-`pymysql` est déclaré dans `pyproject.toml` mais n'est pas utilisé pour l'instant : le projet ne stocke rien dans une base de données.
+- `requests` : requêtes vers ipinfo.io ;
+- `matplotlib` : dashboard ;
+- `pymysql` : déclaré dans le projet, mais non utilisé actuellement.
