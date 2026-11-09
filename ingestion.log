@@ -28,3 +28,13 @@
 2026-11-09 15:02:08,121 | INFO    | ingestion | ./data/auth.log.3.gz : 18382 lines
 2026-11-09 15:02:08,136 | INFO    | ingestion | ./data/auth.log.4.gz : 14806 lines
 2026-11-09 15:02:08,137 | INFO    | ingestion | 4 files read, 65565 lines in total
+2026-11-09 17:17:09,634 | INFO    | ingestion | ./data/auth.log.1 : 14812 lines
+2026-11-09 17:17:09,643 | INFO    | ingestion | ./data/auth.log.2 : 17565 lines
+2026-11-09 17:17:09,659 | INFO    | ingestion | ./data/auth.log.3.gz : 18382 lines
+2026-11-09 17:17:09,672 | INFO    | ingestion | ./data/auth.log.4.gz : 14806 lines
+2026-11-09 17:17:09,673 | INFO    | ingestion | 4 files read, 65565 lines in total
+2026-11-09 17:18:14,583 | INFO    | ingestion | ./data/auth.log.1 : 14812 lines
+2026-11-09 17:18:14,597 | INFO    | ingestion | ./data/auth.log.2 : 17565 lines
+2026-11-09 17:18:14,617 | INFO    | ingestion | ./data/auth.log.3.gz : 18382 lines
+2026-11-09 17:18:14,639 | INFO    | ingestion | ./data/auth.log.4.gz : 14806 lines
+2026-11-09 17:18:14,639 | INFO    | ingestion | 4 files read, 65565 lines in total

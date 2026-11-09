@@ -1,4 +1,3 @@
-import os
 import sys
 import logging
 
@@ -7,14 +6,12 @@ from process import extract_transform, geolocation
 from storage import storage
 from serving import dashboard
 
-LOG_FOLDER = 'logs'
 MODULES = ['main', 'ingestion', 'process', 'storage', 'serving']
 
 
 def setup_logs():
-    # one log file per module in logs/ (logs/ingestion.log, logs/process.log ...)
+    # one log file per module in the project root (ingestion.log, process.log ...)
     # the console only shows the warnings and errors
-    os.makedirs(LOG_FOLDER, exist_ok=True)
     format = logging.Formatter('%(asctime)s | %(levelname)-7s | %(name)s | %(message)s')
     console = logging.StreamHandler()
     console.setLevel(logging.WARNING)
@@ -22,7 +19,7 @@ def setup_logs():
     for module in MODULES:
         logger = logging.getLogger(module)
         logger.setLevel(logging.INFO)
-        file = logging.FileHandler(os.path.join(LOG_FOLDER, module + '.log'), encoding='utf-8')
+        file = logging.FileHandler(module + '.log', encoding='utf-8')
         file.setFormatter(format)
         logger.addHandler(file)
         logger.addHandler(console)
@@ -63,7 +60,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         logging.getLogger('main').warning('stopped with ctrl+c')
     except Exception as e:
-        # unexpected error : the full traceback goes in logs/main.log
+        # unexpected error : the full traceback goes in main.log
         logging.getLogger('main').exception(f'unexpected error : {e}')
         sys.exit(1)
 
