@@ -122,19 +122,29 @@ def dashboard(s):
     accepted = s['accepted_by_user'][:15]
     title = 'Successful attempts per user'
     if accepted:
-        _hbar(axes[1], [r['user'] for r in accepted], [int(r['n']) for r in accepted], title, 'limegreen')
-        axes[1].set_xlabel('successful logins')
-        axes[1].xaxis.get_major_locator().set_params(integer=True)
-        axes[1].set_ylim(max(len(accepted), 4) - 0.5, -0.5)   # keep bars thin when there are few users
+        axes[1].bar([r['user'] for r in accepted], [int(r['n']) for r in accepted], color='limegreen')
+        axes[1].set_title(title)
+        axes[1].set_ylabel('successful logins')
+        axes[1].tick_params(axis='x', labelrotation=45)
+        plt.setp(axes[1].get_xticklabels(), ha='right')
+        axes[1].yaxis.get_major_locator().set_params(integer=True)
     else:
         _empty(axes[1], title)
 
     # 3. failed attempts with an invalid user (account does not exist)
-    invalid = s['top_users']['INVALID'][:15]
+    invalid = s['top_users']['INVALID']
     title = f"Failed attempts with invalid user\n(total {t['INVALID']})"
     if invalid:
-        _hbar(axes[2], [r['user'] for r in invalid], [int(r['n']) for r in invalid], title, 'gold')
-        axes[2].set_xlabel('attempts')
+        top_invalid = invalid[:8]
+        labels = [r['user'] for r in top_invalid]
+        values = [int(r['n']) for r in top_invalid]
+        other_count = sum(int(r['n']) for r in invalid[8:])
+        if other_count:
+            labels.append('Other')
+            values.append(other_count)
+        axes[2].pie(values, labels=labels, autopct='%1.1f%%', startangle=90)
+        axes[2].set_title(title)
+        axes[2].axis('equal')
     else:
         _empty(axes[2], title)
 
